@@ -21,15 +21,33 @@ class Graph {
       this._ctx.fillStyle = "rgba(120,120,120,0.62)";
       this._ctx.fillRect(i, this._height / 2, 1, -(houses.length * 10 + 1));
       let avgTime = 0;
+      let cleaned = false;
       for (let j = 0; j < houses.length; ++j) {
-        avgTime += (this._map.lastClean[houses[j]]);
+        let lastClean = this._map.lastClean[houses[j]];
+        if (lastClean === 0) {
+          lastClean = this._map.time;
+        } else {
+          cleaned = true;
+        }
+        avgTime += lastClean;
       }
       //avgTime /= houses.length;
-      avgTime /= 1000;
+      avgTime /= 500;
       if (avgTime > 200) {
         avgTime = 200;
+        if (cleaned) {
+          this._ctx.fillStyle = "#347daf";
+        } else {
+          this._ctx.fillStyle = "#970000";
+        }
+      } else {
+        if (cleaned) {
+          this._ctx.fillStyle = "#48c3ff";
+        } else {
+          this._ctx.fillStyle = "#FF0000";
+        }
       }
-      this._ctx.fillStyle = "#FF0000";
+
       this._ctx.fillRect(i, this._height / 2, 1, avgTime);
       if (houses.length > 0) {
         lastIndex = houses[houses.length - 1] + 1;

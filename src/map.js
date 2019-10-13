@@ -50,14 +50,20 @@ class Map {
 
     moveSnowPlow(x) {
         const prevSnowPlowX = this._snowPlowX;
+        let nbCleanAtPos = 0;
         this._snowPlowX = x;
         for (let i = 0; i < this._size && this._houses[i] <= x; ++i) {
             if (this.houses[i] === x) {
                 this._time += Math.abs(prevSnowPlowX - this.snowPlowX);
                 if (this.lastClean[i] === 0) {
-                    this._score += this._time;
+                    if (nbCleanAtPos === 0) {
+                        this._score += this._time;
+                    } else {
+                        console.log("multiple houses (" + nbCleanAtPos + ") at " + x);
+                    }
                     this.lastClean[i] = this._time;
                 }
+                ++nbCleanAtPos;
             }
         }
     }

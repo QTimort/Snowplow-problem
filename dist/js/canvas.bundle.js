@@ -104,18 +104,25 @@ var reset = document.getElementById('reset');
 var score = document.getElementById('score');
 var customSolution = document.getElementById('customsolution');
 var houses = document.getElementById('houses');
+var solutionToUse = document.getElementById('solutionId');
 var canvas = document.querySelector('canvas');
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
+var solutions = {
+    "greedy": Solver.greedySolve,
+    "split": Solver.splitSolve,
+    "stupid": Solver.stupidSolve,
+    "custom": useCustomSolution
+};
 var map = new Map(1000);
 var graph = new Graph(canvas, map);
 var activeSolution = void 0;
+var activeSolutionName = void 0;
 var frame = void 0;
 
 function init() {
     map.reset();
-    setSolution(Solver.greedySolve(map));
     frame = 0;
 }
 
@@ -154,16 +161,44 @@ function animate() {
     score.value = Math.round(map.score);
 }
 
+function changeSolution(solutionId) {
+    var s = solutions[solutionId](map);
+    if (isValidSolution(s)) {
+        activeSolution = s;
+        activeSolutionName = solutionId;
+        init();
+    }
+}
+
+function useCustomSolution(map) {
+    setSolution(JSON.parse(customSolution.value));
+}
+
 reset.onclick = function () {
     init();
 };
 customSolution.oninput = function () {
-    setSolution(JSON.parse(customSolution.value));init();
+    if (activeSolutionName === 'custom') {
+        useCustomSolution();init();
+    }
 };
 houses.oninput = function () {
     map.setCustomHouses(Float32Array.from(JSON.parse(houses.value)));init();
 };
 houses.value = JSON.stringify(Array.from(map.houses));
+solutionToUse.onchange = function () {
+    changeSolution(solutionToUse.options[solutionToUse.selectedIndex].value);
+};
+
+for (var solutionsKey in solutions) {
+    var opt = document.createElement("option");
+    opt.value = solutionsKey;
+    opt.text = solutionsKey;
+    solutionToUse.add(opt);
+}
+
+solutionToUse.value = 'greedy';
+solutionToUse.onchange(null);
 
 init();
 animate();
@@ -210,15 +245,33 @@ var Graph = function () {
         this._ctx.fillStyle = "rgba(120,120,120,0.62)";
         this._ctx.fillRect(i, this._height / 2, 1, -(houses.length * 10 + 1));
         var avgTime = 0;
+        var cleaned = false;
         for (var j = 0; j < houses.length; ++j) {
-          avgTime += this._map.lastClean[houses[j]];
+          var lastClean = this._map.lastClean[houses[j]];
+          if (lastClean === 0) {
+            lastClean = this._map.time;
+          } else {
+            cleaned = true;
+          }
+          avgTime += lastClean;
         }
         //avgTime /= houses.length;
-        avgTime /= 1000;
+        avgTime /= 500;
         if (avgTime > 200) {
           avgTime = 200;
+          if (cleaned) {
+            this._ctx.fillStyle = "#347daf";
+          } else {
+            this._ctx.fillStyle = "#970000";
+          }
+        } else {
+          if (cleaned) {
+            this._ctx.fillStyle = "#48c3ff";
+          } else {
+            this._ctx.fillStyle = "#FF0000";
+          }
         }
-        this._ctx.fillStyle = "#FF0000";
+
         this._ctx.fillRect(i, this._height / 2, 1, avgTime);
         if (houses.length > 0) {
           lastIndex = houses[houses.length - 1] + 1;
@@ -281,7 +334,7 @@ var Map = function () {
     }
 
     _createClass(Map, [{
-        key: 'reset',
+        key: "reset",
         value: function reset() {
             this._snowPlowX = 0;
             this._time = 0;
@@ -289,7 +342,7 @@ var Map = function () {
             this.initLastClean();
         }
     }, {
-        key: 'setCustomHouses',
+        key: "setCustomHouses",
         value: function setCustomHouses(houses) {
             this._size = houses.length;
             this._houses = houses.sort();
@@ -298,7 +351,7 @@ var Map = function () {
             this.reset();
         }
     }, {
-        key: 'initHouses',
+        key: "initHouses",
         value: function initHouses() {
             for (var i = 0; i < this._size; ++i) {
                 this._houses[i] = MathUtils.gaussianRandom(0, 1000);
@@ -312,29 +365,35 @@ var Map = function () {
             this._houses.sort();
         }
     }, {
-        key: 'initLastClean',
+        key: "initLastClean",
         value: function initLastClean() {
             for (var i = 0; i < this._size; ++i) {
                 this._lastClean[i] = 0;
             }
         }
     }, {
-        key: 'moveSnowPlow',
+        key: "moveSnowPlow",
         value: function moveSnowPlow(x) {
             var prevSnowPlowX = this._snowPlowX;
+            var nbCleanAtPos = 0;
             this._snowPlowX = x;
             for (var i = 0; i < this._size && this._houses[i] <= x; ++i) {
                 if (this.houses[i] === x) {
                     this._time += Math.abs(prevSnowPlowX - this.snowPlowX);
                     if (this.lastClean[i] === 0) {
-                        this._score += this._time;
+                        if (nbCleanAtPos === 0) {
+                            this._score += this._time;
+                        } else {
+                            console.log("multiple houses (" + nbCleanAtPos + ") at " + x);
+                        }
                         this.lastClean[i] = this._time;
                     }
+                    ++nbCleanAtPos;
                 }
             }
         }
     }, {
-        key: 'getHouseBetween',
+        key: "getHouseBetween",
         value: function getHouseBetween(startIndex, maxValue) {
             var results = [];
             for (var i = startIndex; i < this._size && this._houses[i] <= maxValue; ++i) {
@@ -343,42 +402,42 @@ var Map = function () {
             return results;
         }
     }, {
-        key: 'lastClean',
+        key: "lastClean",
         get: function get() {
             return this._lastClean;
         }
     }, {
-        key: 'min',
+        key: "min",
         get: function get() {
             return this._min;
         }
     }, {
-        key: 'max',
+        key: "max",
         get: function get() {
             return this._max;
         }
     }, {
-        key: 'time',
+        key: "time",
         get: function get() {
             return this._time;
         }
     }, {
-        key: 'size',
+        key: "size",
         get: function get() {
             return this._size;
         }
     }, {
-        key: 'snowPlowX',
+        key: "snowPlowX",
         get: function get() {
             return this._snowPlowX;
         }
     }, {
-        key: 'score',
+        key: "score",
         get: function get() {
             return this._score;
         }
     }, {
-        key: 'houses',
+        key: "houses",
         get: function get() {
             return this._houses;
         }

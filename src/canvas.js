@@ -5,7 +5,7 @@ const Graph = require('./graph.js');
 const reset = document.getElementById('reset');
 const score = document.getElementById('score');
 const customSolution = document.getElementById('customsolution');
-const copyMap = document.getElementById('copymap');
+const houses = document.getElementById('houses');
 const canvas = document.querySelector('canvas');
 canvas.width = innerWidth;
 canvas.height = innerHeight;
@@ -18,23 +18,6 @@ let frame;
 function init() {
     map.reset();
     frame = 0;
-}
-
-
-function copyMapValuesToClipboard() {
-    navigator.permissions.query({
-        name: 'clipboard-write'
-    }).then(permissionStatus => {
-        if (permissionStatus.state === 'granted') {
-            navigator.clipboard.writeText(JSON.stringify(Array.from(map.houses))).then(function() {
-                console.log('Async: Copying to clipboard was successful!');
-            }, function(err) {
-                console.error('Async: Could not copy text: ', err);
-            });
-        } else {
-            console.log("Write access to clipboard denied!");
-        }
-    });
 }
 
 function isValidSolution(solution) {
@@ -75,8 +58,8 @@ function animate() {
 }
 
 reset.onclick = function() {init();};
-copyMap.onclick = function() {copyMapValuesToClipboard();};
 customSolution.oninput = function() {setSolution(JSON.parse(customSolution.value));};
 
+houses.value = JSON.stringify(Array.from(map.houses));
 setSolution(Solver.splitSolve(map));
 animate();

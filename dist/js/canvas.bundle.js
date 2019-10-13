@@ -103,7 +103,7 @@ var Graph = __webpack_require__(/*! ./graph.js */ "./src/graph.js");
 var reset = document.getElementById('reset');
 var score = document.getElementById('score');
 var customSolution = document.getElementById('customsolution');
-var copyMap = document.getElementById('copymap');
+var houses = document.getElementById('houses');
 var canvas = document.querySelector('canvas');
 canvas.width = innerWidth;
 canvas.height = innerHeight;
@@ -116,22 +116,6 @@ var frame = void 0;
 function init() {
     map.reset();
     frame = 0;
-}
-
-function copyMapValuesToClipboard() {
-    navigator.permissions.query({
-        name: 'clipboard-write'
-    }).then(function (permissionStatus) {
-        if (permissionStatus.state === 'granted') {
-            navigator.clipboard.writeText(JSON.stringify(Array.from(map.houses))).then(function () {
-                console.log('Async: Copying to clipboard was successful!');
-            }, function (err) {
-                console.error('Async: Could not copy text: ', err);
-            });
-        } else {
-            console.log("Write access to clipboard denied!");
-        }
-    });
 }
 
 function isValidSolution(solution) {
@@ -173,13 +157,11 @@ function animate() {
 reset.onclick = function () {
     init();
 };
-copyMap.onclick = function () {
-    copyMapValuesToClipboard();
-};
 customSolution.oninput = function () {
     setSolution(JSON.parse(customSolution.value));
 };
 
+houses.value = JSON.stringify(Array.from(map.houses));
 setSolution(Solver.splitSolve(map));
 animate();
 

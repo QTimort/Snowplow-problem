@@ -115,6 +115,7 @@ var frame = void 0;
 
 function init() {
     map.reset();
+    setSolution(Solver.greedySolve(map));
     frame = 0;
 }
 
@@ -136,7 +137,6 @@ function isValidSolution(solution) {
 function setSolution(solution) {
     if (isValidSolution(solution)) {
         activeSolution = solution;
-        init();
     }
 }
 
@@ -158,11 +158,14 @@ reset.onclick = function () {
     init();
 };
 customSolution.oninput = function () {
-    setSolution(JSON.parse(customSolution.value));
+    setSolution(JSON.parse(customSolution.value));init();
 };
-
+houses.oninput = function () {
+    map.setCustomHouses(Float32Array.from(JSON.parse(houses.value)));init();
+};
 houses.value = JSON.stringify(Array.from(map.houses));
-setSolution(Solver.splitSolve(map));
+
+init();
 animate();
 
 /***/ }),
@@ -284,6 +287,15 @@ var Map = function () {
             this._time = 0;
             this._score = 0;
             this.initLastClean();
+        }
+    }, {
+        key: 'setCustomHouses',
+        value: function setCustomHouses(houses) {
+            this._size = houses.length;
+            this._houses = houses.sort();
+            this._min = houses[0];
+            this._max = houses[houses.length - 1];
+            this.reset();
         }
     }, {
         key: 'initHouses',

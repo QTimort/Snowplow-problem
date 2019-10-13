@@ -17,6 +17,7 @@ let frame;
 
 function init() {
     map.reset();
+    setSolution(Solver.greedySolve(map));
     frame = 0;
 }
 
@@ -38,7 +39,6 @@ function isValidSolution(solution) {
 function setSolution(solution) {
     if (isValidSolution(solution)) {
         activeSolution = solution;
-        init();
     }
 }
 
@@ -58,8 +58,9 @@ function animate() {
 }
 
 reset.onclick = function() {init();};
-customSolution.oninput = function() {setSolution(JSON.parse(customSolution.value));};
-
+customSolution.oninput = function() {setSolution(JSON.parse(customSolution.value)); init()};
+houses.oninput = function() {map.setCustomHouses(Float32Array.from(JSON.parse(houses.value))); init()};
 houses.value = JSON.stringify(Array.from(map.houses));
-setSolution(Solver.splitSolve(map));
+
+init();
 animate();

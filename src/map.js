@@ -21,6 +21,14 @@ class Map {
         this.initLastClean();
     }
 
+    setCustomHouses(houses) {
+        this._size = houses.length;
+        this._houses = houses.sort();
+        this._min = houses[0];
+        this._max = houses[houses.length - 1];
+        this.reset();
+    }
+
     initHouses() {
         for (let i = 0; i < this._size; ++i) {
             this._houses[i] = MathUtils.gaussianRandom(0, 1000);

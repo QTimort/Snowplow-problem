@@ -21,7 +21,7 @@ function init() {
 }
 
 function copyMapValuesToClipboard() {
-    navigator.clipboard.writeText(JSON.stringify(map.houses)).then(function() {
+    navigator.clipboard.writeText(JSON.stringify(Array.from(map.houses))).then(function() {
         console.log('Async: Copying to clipboard was successful!');
     }, function(err) {
         console.error('Async: Could not copy text: ', err);

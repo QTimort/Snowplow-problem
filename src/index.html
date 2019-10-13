@@ -9,7 +9,25 @@
         }
     </style>
 </head>
-<body>
+<body style="margin: 0; overflow: hidden">
+    <div style="float: left; width: 30%; padding: 19px">
+        <div class>
+            <button id="reset">Reset</button>
+        </div>
+        <div class>
+            <button id="copymap">Copy houses as JSON to clipboard</button>
+        </div>
+        <div class>
+            Provide a custom solution as JSON Array
+            <input type="text" id="customsolution">
+        </div>
+        <div>
+            <div>
+                Score
+                <input type="number" id="score" readonly>
+            </div>
+        </div>
+    </div>
     <canvas></canvas>
 </body>
 </html>

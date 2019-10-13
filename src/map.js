@@ -4,12 +4,20 @@ class Map {
     constructor(size) {
         this._size = size;
         this._houses = new Float32Array(size);
-        this._lastClean = new Float32Array(size);
+        this._lastClean = new Array(size);
         this._snowPlowX = 0;
         this._min = 0;
         this._max = 0;
         this._time = 0;
+        this._score = 0;
         this.initHouses();
+        this.initLastClean();
+    }
+
+    reset() {
+        this._snowPlowX = 0;
+        this._time = 0;
+        this._score = 0;
         this.initLastClean();
     }
 
@@ -32,11 +40,16 @@ class Map {
         }
     }
 
-    moveSnowPlow(x, step) {
+    moveSnowPlow(x) {
+        const prevSnowPlowX = this._snowPlowX;
         this._snowPlowX = x;
         for (let i = 0; i < this._size && this._houses[i] <= x; ++i) {
             if (this.houses[i] === x) {
-                this.lastClean[i] = step;
+                this._time += Math.abs(prevSnowPlowX - this.snowPlowX);
+                if (this.lastClean[i] === 0) {
+                    this._score += this._time;
+                    this.lastClean[i] = this._time;
+                }
             }
         }
     }
@@ -71,6 +84,10 @@ class Map {
 
     get snowPlowX() {
         return this._snowPlowX;
+    }
+
+    get score() {
+        return this._score;
     }
 
     get houses() {

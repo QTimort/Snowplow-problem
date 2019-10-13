@@ -8,6 +8,31 @@ class Solver {
         return steps;
     }
 
+    static fillInterval(arr, houses, begin, end) {
+        if (begin > end) {
+            for (let i = begin; i >= end; --i) {
+                arr.push(houses[i]);
+            }
+        } else {
+            for (let i = begin; i <= end; ++i) {
+                arr.push(houses[i]);
+            }
+        }
+    }
+
+    static splitSolve(map) {
+        const houses = map.houses;
+        let steps = [];
+        // todo make it not hard coded
+        Solver.fillInterval(steps, houses,500, 700);
+        Solver.fillInterval(steps,houses,499, 300);
+        Solver.fillInterval(steps,houses, 701, 800);
+        Solver.fillInterval(steps,houses, 299, 100);
+        Solver.fillInterval(steps,houses, 801, 999);
+        Solver.fillInterval(steps,houses,99, 0);
+        return steps;
+    }
+
     static greedySolve(map) {
         const list = Array.from(map.houses);
         let newList = [];

@@ -10,7 +10,7 @@ class Graph {
     this._snowPlowSize = 10;
   }
 
-  draw(frame) {
+  draw() {
     const step = (this._map.max - this._map.min) / this._width;
     let max = this._map.min;
     let lastIndex = 0;
@@ -22,12 +22,12 @@ class Graph {
       this._ctx.fillRect(i, this._height / 2, 1, -(houses.length * 10 + 1));
       let avgTime = 0;
       for (let j = 0; j < houses.length; ++j) {
-        avgTime += (frame - this._map.lastClean[houses[j]]);
+        avgTime += (this._map.lastClean[houses[j]]);
       }
       //avgTime /= houses.length;
-      avgTime /= 100;
-      if (avgTime > 100) {
-        avgTime = 100;
+      avgTime /= 1000;
+      if (avgTime > 200) {
+        avgTime = 200;
       }
       this._ctx.fillStyle = "#FF0000";
       this._ctx.fillRect(i, this._height / 2, 1, avgTime);

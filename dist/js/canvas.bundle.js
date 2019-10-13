@@ -100,23 +100,79 @@ var Solver = __webpack_require__(/*! ./solver */ "./src/solver.js");
 var Map = __webpack_require__(/*! ./map.js */ "./src/map.js");
 var Graph = __webpack_require__(/*! ./graph.js */ "./src/graph.js");
 
+var reset = document.getElementById('reset');
+var score = document.getElementById('score');
+var customSolution = document.getElementById('customsolution');
+var copyMap = document.getElementById('copymap');
 var canvas = document.querySelector('canvas');
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
 var map = new Map(1000);
 var graph = new Graph(canvas, map);
-var solution = Solver.greedySolve(map);
-var frame = 0;
+var activeSolution = void 0;
+var frame = void 0;
+
+function init() {
+    map.reset();
+    frame = 0;
+}
+
+function copyMapValuesToClipboard() {
+    navigator.clipboard.writeText(JSON.stringify(map.houses)).then(function () {
+        console.log('Async: Copying to clipboard was successful!');
+    }, function (err) {
+        console.error('Async: Could not copy text: ', err);
+    });
+}
+
+function isValidSolution(solution) {
+    var sortedSolution = new Float32Array(solution).sort();
+    if (solution.length !== map.houses.length) {
+        console.error("Solution cleans too few / much houses! Expected " + map.houses.length + " houses but got " + solution.length);
+        return false;
+    }
+    for (var i = 0; i < solution.length; ++i) {
+        if (map.houses[i] !== sortedSolution[i]) {
+            console.error("Solution does not clean house at " + map.houses[i]);
+            return false;
+        }
+    }
+    return true;
+}
+
+function setSolution(solution) {
+    if (isValidSolution(solution)) {
+        activeSolution = solution;
+        init();
+    }
+}
 
 function animate() {
     requestAnimationFrame(animate);
-    map.moveSnowPlow(solution[frame % solution.length], frame);
+    if (activeSolution === undefined || activeSolution === null) {
+        return;
+    }
+    map.moveSnowPlow(activeSolution[frame]);
     graph.clear();
-    graph.draw(frame);
-    ++frame;
+    graph.draw();
+    if (frame < activeSolution.length) {
+        ++frame;
+    }
+    score.value = Math.round(map.score);
 }
 
+reset.onclick = function () {
+    init();
+};
+copyMap.onclick = function () {
+    copyMapValuesToClipboard();
+};
+customSolution.oninput = function () {
+    setSolution(JSON.parse(customSolution.value));
+};
+
+setSolution(Solver.splitSolve(map));
 animate();
 
 /***/ }),
@@ -150,7 +206,7 @@ var Graph = function () {
 
   _createClass(Graph, [{
     key: "draw",
-    value: function draw(frame) {
+    value: function draw() {
       var step = (this._map.max - this._map.min) / this._width;
       var max = this._map.min;
       var lastIndex = 0;
@@ -162,12 +218,12 @@ var Graph = function () {
         this._ctx.fillRect(i, this._height / 2, 1, -(houses.length * 10 + 1));
         var avgTime = 0;
         for (var j = 0; j < houses.length; ++j) {
-          avgTime += frame - this._map.lastClean[houses[j]];
+          avgTime += this._map.lastClean[houses[j]];
         }
         //avgTime /= houses.length;
-        avgTime /= 100;
-        if (avgTime > 100) {
-          avgTime = 100;
+        avgTime /= 1000;
+        if (avgTime > 200) {
+          avgTime = 200;
         }
         this._ctx.fillStyle = "#FF0000";
         this._ctx.fillRect(i, this._height / 2, 1, avgTime);
@@ -221,16 +277,25 @@ var Map = function () {
 
         this._size = size;
         this._houses = new Float32Array(size);
-        this._lastClean = new Float32Array(size);
+        this._lastClean = new Array(size);
         this._snowPlowX = 0;
         this._min = 0;
         this._max = 0;
         this._time = 0;
+        this._score = 0;
         this.initHouses();
         this.initLastClean();
     }
 
     _createClass(Map, [{
+        key: 'reset',
+        value: function reset() {
+            this._snowPlowX = 0;
+            this._time = 0;
+            this._score = 0;
+            this.initLastClean();
+        }
+    }, {
         key: 'initHouses',
         value: function initHouses() {
             for (var i = 0; i < this._size; ++i) {
@@ -253,11 +318,16 @@ var Map = function () {
         }
     }, {
         key: 'moveSnowPlow',
-        value: function moveSnowPlow(x, step) {
+        value: function moveSnowPlow(x) {
+            var prevSnowPlowX = this._snowPlowX;
             this._snowPlowX = x;
             for (var i = 0; i < this._size && this._houses[i] <= x; ++i) {
                 if (this.houses[i] === x) {
-                    this.lastClean[i] = step;
+                    this._time += Math.abs(prevSnowPlowX - this.snowPlowX);
+                    if (this.lastClean[i] === 0) {
+                        this._score += this._time;
+                        this.lastClean[i] = this._time;
+                    }
                 }
             }
         }
@@ -299,6 +369,11 @@ var Map = function () {
         key: 'snowPlowX',
         get: function get() {
             return this._snowPlowX;
+        }
+    }, {
+        key: 'score',
+        get: function get() {
+            return this._score;
         }
     }, {
         key: 'houses',
@@ -389,6 +464,33 @@ var Solver = function () {
             for (var i = 0; i < houses.length; ++i) {
                 steps.push(houses[i]);
             }
+            return steps;
+        }
+    }, {
+        key: "fillInterval",
+        value: function fillInterval(arr, houses, begin, end) {
+            if (begin > end) {
+                for (var i = begin; i >= end; --i) {
+                    arr.push(houses[i]);
+                }
+            } else {
+                for (var _i = begin; _i <= end; ++_i) {
+                    arr.push(houses[_i]);
+                }
+            }
+        }
+    }, {
+        key: "splitSolve",
+        value: function splitSolve(map) {
+            var houses = map.houses;
+            var steps = [];
+            // todo make it not hard coded
+            Solver.fillInterval(steps, houses, 500, 700);
+            Solver.fillInterval(steps, houses, 499, 300);
+            Solver.fillInterval(steps, houses, 701, 800);
+            Solver.fillInterval(steps, houses, 299, 100);
+            Solver.fillInterval(steps, houses, 801, 999);
+            Solver.fillInterval(steps, houses, 99, 0);
             return steps;
         }
     }, {

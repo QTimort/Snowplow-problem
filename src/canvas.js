@@ -20,11 +20,20 @@ function init() {
     frame = 0;
 }
 
+
 function copyMapValuesToClipboard() {
-    navigator.clipboard.writeText(JSON.stringify(Array.from(map.houses))).then(function() {
-        console.log('Async: Copying to clipboard was successful!');
-    }, function(err) {
-        console.error('Async: Could not copy text: ', err);
+    navigator.permissions.query({
+        name: 'clipboard-write'
+    }).then(permissionStatus => {
+        if (permissionStatus.state === 'granted') {
+            navigator.clipboard.writeText(JSON.stringify(Array.from(map.houses))).then(function() {
+                console.log('Async: Copying to clipboard was successful!');
+            }, function(err) {
+                console.error('Async: Could not copy text: ', err);
+            });
+        } else {
+            console.log("Write access to clipboard denied!");
+        }
     });
 }
 
